@@ -7,18 +7,26 @@ var config = {
   messagingSenderId: "872134012302"
 };
 firebase.initializeApp(config);
-var database = firebase.database(); 
+var database = firebase.database();
+
+//var list = []; 
 
 $(document).ready(function() {
-  // removes what removeItem is triggered on 
+  // adds gifter to database list item and removes item from site
   function removeItem() {
-    $(this).parent().remove();
+    var input = $("<input type='text'></input>"); 
+    $(this).parent().append("Gifter: "); 
+    $(this).parent().append(input);
+    // database.ref('list').
+    //$(this).parent().remove();
   }
 
   // create list item and add to list
   function createItem(name, notes, link) {
     var JSItem = { name: name, notes: notes, link: link };
-    database.ref('list').push(JSItem); 
+    //database.ref('list/' + list.length).set(JSItem);
+    database.ref('list/').push(JSItem);
+   // console.log(key);
     var newItem = $("<li></li>");
     var notesSpan = $("<span>" + notes + "</span>");
     var itemLink = $("<a href='" + link + "'> Link </a>"); 
@@ -37,7 +45,6 @@ $(document).ready(function() {
   // collect data from form and calls createItem
   $("#submit-btn").click(function(event) {
     event.preventDefault();
-   
     var itemName =  $("form [name='item-name']").val(); 
     var notes = $("form [name='notes']").val();
     var link = $("form [name='link']").val(); 
