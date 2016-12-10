@@ -78,6 +78,7 @@ $(document).ready(function() {
   // create new list
   function createNewList() {
     var listId = $("#new-list").val();
+    listId = listId.replace(/\s+/g, '');
     switchList(listId);
   }
 
@@ -86,15 +87,16 @@ $(document).ready(function() {
     list[key] = { name: name, price: price, notes: notes, link: link, key: key };
 
     var newItem = $("<li id='" + key + "'></li>");
+    var nameSpan = $("<span id='nameSpan'> " + name + " </span>");
     var itemPrice = $("<span id='price'>(" + price + ") </span>");
-    var notesSpan = $("<span>" + notes + "</span>");
+    var notesSpan = $("<span id='notesSpan'>" + notes + "</span>");
     var itemLink = $("<a href='" + link + "'> Link </a>"); 
     var newButton = $("<button class='remove-item-btn'>remove</button>");
     newButton.on("click", removeItem);
     
     // append data to item and add to list 
     newItem.append(newButton);
-    newItem.append(" " + name + " ");
+    newItem.append(nameSpan);
     newItem.append(itemPrice);
     newItem.append(notesSpan); 
     if (link != "")
