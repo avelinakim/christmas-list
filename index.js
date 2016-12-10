@@ -9,29 +9,84 @@ var config = {
 firebase.initializeApp(config);
 var database = firebase.database();
 
-//var list = []; 
+var list = {};
+var currentListId = "default";
 
 $(document).ready(function() {
+  getAllLists();
+  subscribeToList();
+  $("#create-new-list").click(createNewList);
+
   // adds gifter to database list item and removes item from site
   function removeItem() {
     var input = $("<input type='text'></input>"); 
     $(this).parent().append("Gifter: "); 
     $(this).parent().append(input);
-    // database.ref('list').
-    //$(this).parent().remove();
+    $(this).off("click", removeItem);
+    $(this).on("click", saveGiftedItem);
+  }
+
+  // save item and gifter and removes from list
+  function saveGiftedItem() {
+    var key = $(this).parent().attr("id");
+    var item = list[key];
+    item.gifter = $("#" + key + " input").val();
+    database.ref("gifted/" + currentListId).push(item);
+    database.ref("lists/" + currentListId + "/" + key).remove();
+    delete list[key];
+    $(this).parent().remove();
+  }
+
+  // load list
+  function subscribeToList(listId) {
+    database.ref("lists/" + listId).on("child_added", function (snapshot) {
+      var item = snapshot.val();
+      createItem(item.name, item.notes, item.link, snapshot.key);
+    });
+  }
+
+  function switchList(listId) {
+    $("#submit-btn").attr("disabled", false);
+
+    if (!listId || typeof listId !== 'string') {
+      listId =  $(this).attr("id");
+    }
+
+    currentListId = listId;
+    list = {};
+    $("ul").empty();
+    subscribeToList(listId);
+
+    $("#list-title").empty();
+    $("#list-title").append(listId);
+  }
+
+  function getAllLists() {
+    database.ref("lists").on("child_added", function (snapshot) {
+      var newList = snapshot.val();
+      var listId = snapshot.key;
+
+      var link = $("<a style='display:block;' href='#' id='" + listId + "'>" + listId + "</a>");
+      link.on("click", switchList);
+      $("#lists").append(link);
+    });
+  }
+
+  function createNewList() {
+    console.log('boom');
+    var listId = $("#new-list").val();
+    switchList(listId);
   }
 
   // create list item and add to list
-  function createItem(name, notes, link) {
-    var JSItem = { name: name, notes: notes, link: link };
-    //database.ref('list/' + list.length).set(JSItem);
-    database.ref('list/').push(JSItem);
-   // console.log(key);
-    var newItem = $("<li></li>");
+  function createItem(name, notes, link, key) {
+    list[key] = { name: name, notes: notes, link: link, key: key };
+
+    var newItem = $("<li id='" + key + "'></li>");
     var notesSpan = $("<span>" + notes + "</span>");
     var itemLink = $("<a href='" + link + "'> Link </a>"); 
     var newButton = $("<button class='remove-item-btn'>remove</button>");
-    newButton.click(removeItem);
+    newButton.on("click", removeItem);
     
     // append data to item and add to list 
     newItem.append(newButton);
@@ -47,7 +102,13 @@ $(document).ready(function() {
     event.preventDefault();
     var itemName =  $("form [name='item-name']").val(); 
     var notes = $("form [name='notes']").val();
-    var link = $("form [name='link']").val(); 
-    createItem(itemName, notes, link);
+    var link = $("form [name='link']").val();
+    database.ref("lists/" + currentListId).push({
+      name: itemName,
+      notes: notes,
+      link: link,
+    }, function (snapshot) {
+      createItem(itemName, notes, link, snapshot.key);
+    });
   });
 });
